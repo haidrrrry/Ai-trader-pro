@@ -2,7 +2,7 @@ import hmac
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Request
 
 from database import get_db_connection
 from routes_models import (
@@ -12,6 +12,7 @@ from routes_models import (
     UserRegisterRequest,
     UserSendCodeRequest,
 )
+from rate_limit import check_rate_limit, get_client_ip
 from routes_shared import RouteContext
 from services import _create_user_session, _get_agent_by_token, _get_user_by_token
 from utils import _extract_token, hash_password, verify_password
@@ -29,7 +30,11 @@ CODE_RESEND_COOLDOWN_SECONDS = 30
 
 def register_user_routes(app: FastAPI, ctx: RouteContext) -> None:
     @app.post('/api/users/send-code')
-    async def send_verification_code(data: UserSendCodeRequest):
+    async def send_verification_code(data: UserSendCodeRequest, request: Request):
+        try:
+            check_rate_limit(get_client_ip(request), "user_send_code", max_requests=5, window_seconds=3600)
+        except ValueError as exc:
+            raise HTTPException(status_code=429, detail=str(exc)) from exc
         now = datetime.now(timezone.utc)
         existing = ctx.verification_codes.get(data.email)
         if existing:
@@ -48,7 +53,11 @@ def register_user_routes(app: FastAPI, ctx: RouteContext) -> None:
         return {'success': True, 'message': 'Code sent'}
 
     @app.post('/api/users/register')
-    async def user_register(data: UserRegisterRequest):
+    async def user_register(data: UserRegisterRequest, request: Request):
+        try:
+            check_rate_limit(get_client_ip(request), "user_register", max_requests=10, window_seconds=3600)
+        except ValueError as exc:
+            raise HTTPException(status_code=429, detail=str(exc)) from exc
         if data.email not in ctx.verification_codes:
             raise HTTPException(status_code=400, detail='No code sent')
 
@@ -90,7 +99,11 @@ def register_user_routes(app: FastAPI, ctx: RouteContext) -> None:
         return {'success': True, 'token': token, 'user_id': user_id}
 
     @app.post('/api/users/login')
-    async def user_login(data: UserLoginRequest):
+    async def user_login(data: UserLoginRequest, request: Request):
+        try:
+            check_rate_limit(get_client_ip(request), "user_login", max_requests=30, window_seconds=3600)
+        except ValueError as exc:
+            raise HTTPException(status_code=429, detail=str(exc)) from exc
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM users WHERE email = ?', (data.email,))

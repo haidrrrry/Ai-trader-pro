@@ -2,7 +2,7 @@ import json
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from fastapi import FastAPI, Header, HTTPException, WebSocket
+from fastapi import FastAPI, Header, HTTPException, Request, WebSocket
 
 from database import get_db_connection
 from experiment_events import record_event
@@ -19,6 +19,7 @@ from routes_models import (
     AgentRegister,
     AgentTaskCreate,
 )
+from rate_limit import check_rate_limit, get_client_ip
 from routes_shared import (
     AGENT_MESSAGE_SUMMARY_CACHE_KEY_PREFIX,
     AGENT_MESSAGE_SUMMARY_CACHE_TTL_SECONDS,
@@ -549,7 +550,17 @@ def register_agent_routes(app: FastAPI, ctx: RouteContext) -> None:
         return payload
 
     @app.post('/api/claw/agents/selfRegister')
-    async def agent_self_register(data: AgentRegister):
+    async def agent_self_register(data: AgentRegister, request: Request):
+        try:
+            check_rate_limit(
+                get_client_ip(request),
+                "agent_register",
+                max_requests=10,
+                window_seconds=3600,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=429, detail=str(exc)) from exc
+
         agent_name = data.name.strip()
         if not agent_name:
             raise HTTPException(status_code=400, detail='Agent name is required')
@@ -638,7 +649,17 @@ def register_agent_routes(app: FastAPI, ctx: RouteContext) -> None:
             raise HTTPException(status_code=500, detail=str(exc))
 
     @app.post('/api/claw/agents/login')
-    async def agent_login(data: AgentLogin):
+    async def agent_login(data: AgentLogin, request: Request):
+        try:
+            check_rate_limit(
+                get_client_ip(request),
+                "agent_login",
+                max_requests=30,
+                window_seconds=3600,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=429, detail=str(exc)) from exc
+
         row = _get_agent_by_name(data.name)
 
         if not row or not verify_password(data.password, row['password_hash']):
