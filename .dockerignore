@@ -1,0 +1,10 @@
+.git
+.env
+node_modules
+__pycache__
+*.pyc
+.pytest_cache
+service/server/data
+service/server/logs
+service/frontend/dist
+research/exports
