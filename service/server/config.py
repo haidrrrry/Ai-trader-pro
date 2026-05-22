@@ -5,6 +5,7 @@ Configuration Module
 """
 
 import os
+import sys
 from pathlib import Path
 
 # Load environment variables from .env file in project root
@@ -12,6 +13,31 @@ env_path = Path(__file__).parent.parent.parent / ".env"
 from dotenv import load_dotenv
 
 load_dotenv(env_path)
+
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def validate_required_config() -> None:
+    """Fail fast when required environment variables are missing."""
+    errors: list[str] = []
+    allow_sqlite = _env_bool("ALLOW_SQLITE") or "PYTEST_CURRENT_TEST" in os.environ
+
+    if not os.getenv("DATABASE_URL", "").strip() and not allow_sqlite:
+        errors.append("DATABASE_URL is required (PostgreSQL connection URL).")
+
+    if _env_bool("REDIS_ENABLED") and not os.getenv("REDIS_URL", "").strip():
+        errors.append("REDIS_URL is required when REDIS_ENABLED=true.")
+
+    if errors:
+        print("Configuration error:\n- " + "\n- ".join(errors), file=sys.stderr)
+        print(f"See {env_path.parent / '.env.example'} for a complete template.", file=sys.stderr)
+        sys.exit(1)
+
 
 # ==================== Configuration ====================
 

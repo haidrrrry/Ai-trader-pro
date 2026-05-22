@@ -38,6 +38,7 @@ if os.getenv("API_STDERR_LOG", "false").strip().lower() in {"1", "true", "yes", 
 
 logger = logging.getLogger(__name__)
 
+from config import validate_required_config
 from cache import get_cache_status
 from database import init_database, get_database_status
 from routes import create_app
@@ -51,6 +52,8 @@ from tasks import (
 if not api_access_log_enabled():
     logging.getLogger("uvicorn.access").disabled = True
     logging.getLogger("uvicorn.access").propagate = False
+
+validate_required_config()
 
 # Initialize database
 init_database()

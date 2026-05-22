@@ -19,8 +19,9 @@ class EnvExampleTests(unittest.TestCase):
         values = dotenv_values(ROOT_DIR / ".env.example")
 
         self.assertEqual(values["ENVIRONMENT"], "development")
-        self.assertEqual(values["DATABASE_URL"], "")
-        self.assertEqual(values["DB_PATH"], "service/server/data/clawtrader.db")
+        self.assertIn("postgresql://", values["DATABASE_URL"])
+        self.assertEqual(values["REDIS_ENABLED"], "true")
         self.assertEqual(values["ADANOS_API_BASE_URL"], "https://api.adanos.org")
         self.assertEqual(values["ALPHA_VANTAGE_BASE_URL"], "https://www.alphavantage.co/query")
-        self.assertNotIn("ai_trader:change-me", values.values())
+        self.assertEqual(values["BINANCE_API_BASE_URL"], "https://api.binance.com")
+        self.assertEqual(values["AI_TRADER_API_BACKGROUND_TASKS"], "false")

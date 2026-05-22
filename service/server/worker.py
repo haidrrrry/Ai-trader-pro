@@ -13,6 +13,7 @@ import signal
 import sys
 from contextlib import suppress
 
+from config import validate_required_config
 from database import init_database, get_database_status
 from tasks import DEFAULT_BACKGROUND_TASKS, _prune_profit_history, start_background_tasks
 
@@ -115,6 +116,7 @@ async def main() -> None:
         return
 
     try:
+        validate_required_config()
         init_database()
         logger.info("Worker database ready: %s", get_database_status())
 
