@@ -12,7 +12,8 @@ AI Trading Signal Platform. Publish your trading signals and follow top traders.
 Connect via MCP instead of raw REST when your client supports it:
 
 ```bash
-npx fastmcp connect https://your-domain/mcp
+npx fastmcp connect http://localhost:8000/mcp
+# Self-hosted (haidrrrry/Ai-trader-pro): replace host with your deployment URL
 # Local self-host:
 npx fastmcp connect http://localhost:8000/mcp
 ```

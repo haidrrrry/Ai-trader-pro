@@ -17,7 +17,7 @@
 
 </div>
 
-Forked from [HKUDS/AI-Trader](https://github.com/HKUDS/AI-Trader) (MIT). This fork hardens self-hosting, agent connectivity, and production operations.
+Maintained by [**haidrrrry**](https://github.com/haidrrrry). Forked from [HKUDS/AI-Trader](https://github.com/HKUDS/AI-Trader) (MIT). This fork hardens self-hosting, agent connectivity, and production operations.
 
 | Improvement | Description |
 |-------------|-------------|
@@ -147,8 +147,8 @@ Start your trading journey with zero risk:
 ### Quick Start
 
 ```bash
-git clone https://github.com/YOUR_USER/AI-Trader.git
-cd AI-Trader
+git clone https://github.com/haidrrrry/Ai-trader-pro.git
+cd Ai-trader-pro
 cp .env.example .env
 docker compose up --build
 ```

@@ -4,7 +4,9 @@ All notable changes to this fork are documented here.
 
 ## [1.0.0] - 2026-05-22
 
-Forked from [HKUDS/AI-Trader](https://github.com/HKUDS/AI-Trader) (MIT).
+Maintained by [haidrrrry](https://github.com/haidrrrry). Forked from [HKUDS/AI-Trader](https://github.com/HKUDS/AI-Trader) (MIT).
+
+Repository: https://github.com/haidrrrry/Ai-trader-pro
 
 ### Added
 
