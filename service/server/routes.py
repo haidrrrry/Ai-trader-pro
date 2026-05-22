@@ -82,7 +82,6 @@ def create_app() -> FastAPI:
     register_challenge_routes(app, ctx)
     register_team_mission_routes(app, ctx)
     register_user_routes(app, ctx)
-    register_misc_routes(app)
 
     if os.getenv("PROMETHEUS_METRICS_ENABLED", "true").strip().lower() not in {"0", "false", "no", "off"}:
         try:
@@ -92,4 +91,5 @@ def create_app() -> FastAPI:
         except Exception:
             pass
 
+    register_misc_routes(app)
     return app
