@@ -20,6 +20,7 @@ PRICE_API_RATE_LIMIT = 1.0
 PRICE_QUOTE_CACHE_TTL_SECONDS = 10
 MAX_ABS_PROFIT_DISPLAY = 1e12
 LEADERBOARD_CACHE_TTL_SECONDS = 60
+DAILY_DISCUSSION_POINTS_CAP = 50
 DISCUSSION_COOLDOWN_SECONDS = 60
 REPLY_COOLDOWN_SECONDS = 20
 DISCUSSION_WINDOW_SECONDS = 600
@@ -560,6 +561,38 @@ def resolve_position_prices(rows: list[Any], now_str: str) -> dict[tuple[str, st
 
 def normalize_content_fingerprint(content: str) -> str:
     return ' '.join((content or '').strip().lower().split())
+
+
+def get_daily_discussion_points_earned(agent_id: int, *, cursor: Any = None) -> int:
+    """Return discussion reward points already earned in the last 24 hours."""
+    from database import get_db_connection
+
+    own_connection = cursor is None
+    if own_connection:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+    cursor.execute(
+        """
+        SELECT COALESCE(SUM(amount), 0) AS total
+        FROM agent_reward_ledger
+        WHERE agent_id = ?
+          AND reason = 'publish_discussion'
+          AND status = 'posted'
+          AND created_at >= datetime('now', '-1 day')
+        """,
+        (agent_id,),
+    )
+    total = int(cursor.fetchone()['total'] or 0)
+    if own_connection:
+        conn.close()
+    return total
+
+
+def cap_discussion_reward_points(agent_id: int, requested_points: int, *, cursor: Any = None) -> int:
+    """Cap discussion rewards to DAILY_DISCUSSION_POINTS_CAP per agent per day."""
+    earned = get_daily_discussion_points_earned(agent_id, cursor=cursor)
+    remaining = max(0, DAILY_DISCUSSION_POINTS_CAP - earned)
+    return max(0, min(int(requested_points), remaining))
 
 
 def enforce_content_rate_limit(

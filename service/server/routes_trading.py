@@ -110,7 +110,7 @@ def register_trading_routes(app: FastAPI, ctx: RouteContext) -> None:
             'return': 'profit_percent DESC',
             'risk': 'risk_adjusted_score DESC',
             'collaboration': 'collaboration_score DESC',
-            'quality': 'quality_score_avg DESC',
+            'quality': 'quality_score_avg DESC, engagement_quality_score DESC',
         }[metric]
         cursor.execute(
             f"""
@@ -187,6 +187,14 @@ def register_trading_routes(app: FastAPI, ctx: RouteContext) -> None:
                 COALESCE(ls.citation_count, 0) AS citation_count,
                 COALESCE(ls.adoption_count, 0) AS adoption_count,
                 COALESCE(ls.quality_score_avg, 0) AS quality_score_avg,
+                (
+                    COALESCE(ls.adoption_count, 0) * 2 +
+                    CASE
+                        WHEN COALESCE(ls.reply_count, 0) > 50 THEN 50
+                        ELSE COALESCE(ls.reply_count, 0)
+                    END +
+                    CASE WHEN ap.profit_percent > 0 THEN ap.profit_percent * 0.1 ELSE 0 END
+                ) AS engagement_quality_score,
                 ls.id AS metric_snapshot_id,
                 ls.window_key AS metric_window_key,
                 ls.window_start_at AS metric_window_start_at,
@@ -218,6 +226,11 @@ def register_trading_routes(app: FastAPI, ctx: RouteContext) -> None:
                 'risk_adjusted_score': float(row['risk_adjusted_score'] or 0),
                 'collaboration_score': float(row['collaboration_score'] or 0),
                 'quality_score_avg': float(row['quality_score_avg'] or 0),
+                'engagement_quality_score': float(
+                    row['engagement_quality_score']
+                    if 'engagement_quality_score' in row.keys()
+                    else (row['quality_score_avg'] or 0)
+                ),
                 'metric_snapshot': {
                     'id': row['metric_snapshot_id'],
                     'window_key': row['metric_window_key'],

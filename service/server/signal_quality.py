@@ -33,6 +33,18 @@ def _clamp_score(value: float) -> float:
     return round(max(0.0, min(5.0, value)), 4)
 
 
+def compute_engagement_quality_score(
+    *,
+    follower_copies: int = 0,
+    reply_count: int = 0,
+    return_pct: float = 0.0,
+) -> float:
+    """Leaderboard engagement score: copies weigh 2x, replies capped at 50, PnL bonus."""
+    capped_replies = min(max(reply_count, 0), 50)
+    pnl_bonus = max(float(return_pct or 0), 0.0) * 0.1
+    return round((max(follower_copies, 0) * 2) + capped_replies + pnl_bonus, 4)
+
+
 def detect_duplicate_content(
     content: str,
     *,

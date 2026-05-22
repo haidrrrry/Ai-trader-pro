@@ -9,6 +9,7 @@ from typing import Any
 
 from database import begin_write_transaction, get_db_connection
 from routes_shared import utc_now_iso_z
+from signal_quality import compute_engagement_quality_score
 
 
 INITIAL_CAPITAL = 100000.0
@@ -126,6 +127,13 @@ def refresh_agent_metric_snapshots(window_days: int = 7, window_key: str | None 
                 (agent_id, start_at, end_at),
             )
             quality_score_avg = float(cursor.fetchone()["avg_score"] or 0)
+            engagement_quality_score = compute_engagement_quality_score(
+                follower_copies=adoption_count,
+                reply_count=reply_count,
+                return_pct=return_pct,
+            )
+            # Prefer engagement-based score for leaderboard ranking when available.
+            leaderboard_quality_score = max(quality_score_avg, engagement_quality_score)
 
             risk_violation_count = 0
             cursor.execute(
@@ -151,9 +159,15 @@ def refresh_agent_metric_snapshots(window_days: int = 7, window_key: str | None 
                     accepted_reply_count,
                     citation_count,
                     adoption_count,
-                    round(quality_score_avg, 4),
+                    round(leaderboard_quality_score, 4),
                     risk_violation_count,
-                    _json_dumps({"window_days": window_days}),
+                    _json_dumps(
+                        {
+                            "window_days": window_days,
+                            "engagement_quality_score": engagement_quality_score,
+                            "signal_quality_avg": round(quality_score_avg, 4),
+                        }
+                    ),
                     created_at,
                 ),
             )

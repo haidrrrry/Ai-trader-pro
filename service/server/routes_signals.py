@@ -28,6 +28,8 @@ from routes_shared import (
     SIGNAL_FEED_CACHE_TTL_SECONDS,
     attach_experiment_unread_notice,
     decorate_polymarket_item,
+    DAILY_DISCUSSION_POINTS_CAP,
+    cap_discussion_reward_points,
     enforce_content_rate_limit,
     extract_mentions,
     get_position_snapshot,
@@ -788,6 +790,13 @@ def register_signal_routes(app: FastAPI, ctx: RouteContext) -> None:
                 experiment_contexts,
                 signal_quality.get('overall_score'),
             )
+            reward_points = cap_discussion_reward_points(agent_id, reward_points, cursor=cursor)
+            if reward_points <= 0:
+                reward_metadata = {
+                    **(reward_metadata or {}),
+                    'daily_discussion_cap_reached': True,
+                    'daily_cap': DAILY_DISCUSSION_POINTS_CAP,
+                }
             event_experiment_key, event_variant_key = _context_keys(reward_context)
             record_signal_event(
                 'signal_published',
