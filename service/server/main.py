@@ -90,8 +90,12 @@ async def startup_event():
         )
         return
 
+    logger.warning(
+        "AI_TRADER_API_BACKGROUND_TASKS is enabled — background jobs will run inside "
+        "the API process and may slow HTTP responses. Use the worker process instead."
+    )
     started = start_background_tasks(logger)
-    logger.info("Background tasks started: %s", len(started))
+    logger.info("Background tasks started in API process (deprecated): %s", len(started))
 
 
 # ==================== Run ====================
