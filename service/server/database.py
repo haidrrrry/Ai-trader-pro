@@ -9,6 +9,7 @@ from __future__ import annotations
 import os
 import re
 import sqlite3
+import sys
 from typing import Any, Iterable, Optional, Sequence
 
 from config import DATABASE_URL
@@ -43,6 +44,29 @@ _ALTER_ADD_COLUMN_PATTERN = re.compile(
     flags=re.IGNORECASE,
 )
 _POSTGRES_RETRYABLE_SQLSTATES = {"40001", "40P01", "55P03"}
+
+
+def _sqlite_allowed() -> bool:
+    """SQLite is only permitted for unit tests or explicit local override."""
+    if os.getenv("ALLOW_SQLITE", "").strip().lower() in {"1", "true", "yes", "on"}:
+        return True
+    return "PYTEST_CURRENT_TEST" in os.environ
+
+
+def enforce_database_url() -> None:
+    """Require PostgreSQL for production and self-hosted deployments."""
+    if DATABASE_URL:
+        return
+    if _sqlite_allowed():
+        return
+    print(
+        "ERROR: DATABASE_URL is required (PostgreSQL).\n"
+        "  Set DATABASE_URL=postgresql://user:pass@host:5432/ai_trader in .env\n"
+        "  For Docker: postgresql://ai_trader:changeme@postgres:5432/ai_trader\n"
+        "  Unit tests may set ALLOW_SQLITE=true or run under pytest.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 
 def using_postgres() -> bool:
@@ -361,6 +385,7 @@ def get_database_status() -> dict[str, Any]:
 
 def init_database():
     """Initialize database schema."""
+    enforce_database_url()
     conn = get_db_connection()
     previous_autocommit = None
     if using_postgres():
