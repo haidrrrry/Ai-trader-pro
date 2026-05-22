@@ -58,6 +58,14 @@ init_database()
 # Create app
 app = create_app()
 
+try:
+    from mcp_server import mount_mcp
+
+    mount_mcp(app)
+    logger.info("MCP server mounted at /mcp")
+except Exception as exc:
+    logger.warning("MCP server not mounted: %s", exc)
+
 
 # ==================== Startup ====================
 
