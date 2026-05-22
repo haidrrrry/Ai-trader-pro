@@ -83,6 +83,7 @@ class RegistrationBruteForceLockoutTests(unittest.TestCase):
         # Stub out the user-creation side-effects so we exercise the auth gate
         # without writing to a real database.
         with patch('routes_users._create_user_session', return_value='stub-token'), \
+             patch('routes_users.check_rate_limit'), \
              patch('routes_users.get_db_connection') as fake_conn:
             cursor = fake_conn.return_value.cursor.return_value
             cursor.fetchone.return_value = None

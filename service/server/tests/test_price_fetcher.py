@@ -17,10 +17,11 @@ def _time_series_payload(rows: dict) -> dict:
 
 class UsStockPriceTimezoneTests(unittest.TestCase):
     def test_market_alias_uses_crypto_price_source(self) -> None:
-        with patch.object(price_fetcher, "_get_hyperliquid_candle_close", return_value=None), \
+        with patch.object(price_fetcher, "_get_binance_price", return_value=None), \
+             patch.object(price_fetcher, "_get_hyperliquid_candle_close", return_value=None), \
              patch.object(price_fetcher, "_get_hyperliquid_mid_price", return_value=4.2) as mock_mid, \
              patch.object(price_fetcher, "_get_us_stock_price", return_value=125.79) as mock_stock:
-            price = price_fetcher.get_price_from_market("SUI", "2026-05-15T08:00:00Z", "binance")
+            price = price_fetcher.get_price_from_market("SUI", "2026-05-15T08:00:00Z", "crypto")
 
         self.assertEqual(price, 4.2)
         mock_mid.assert_called_once_with("SUI")
