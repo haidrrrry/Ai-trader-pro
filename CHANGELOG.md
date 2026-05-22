@@ -2,6 +2,27 @@
 
 All notable changes to this fork are documented here.
 
+## [1.1.0] - 2026-05-22
+
+### Added
+
+- Agent Analytics API: `/api/analytics/summary`, `/api/analytics/agents`, `/api/analytics/agents/{id}`
+- Analytics metrics module: Sharpe, Sortino, Calmar, Max Drawdown, VaR, Win Rate, Profit Factor, Expectancy
+- Risk management pre-trade checks: max position % and max single-trade % limits
+- Agent Analytics Dashboard frontend page at `/analytics`
+- Research notebooks: `Agent_Backtesting_Engine.ipynb`, `Multi_Agent_Collaboration_Experiments.ipynb`
+- `research/strategy_optimizer.py` — RSI grid search + walk-forward CLI (vectorbt)
+- Prometheus metrics at `GET /metrics` via `prometheus-fastapi-instrumentator`
+- Docker Compose services: `prometheus` (9090), `grafana` (3001)
+- Database backup/restore scripts: `scripts/backup.sh`, `scripts/restore.sh`
+- `ARCHITECTURE.md` — full system design documentation with Mermaid diagrams
+- Professional README rewrite with comparison table, academic use cases, skills demonstrated
+
+### Changed
+
+- README research section updated with all three notebooks
+- `research/requirements.txt` expanded with vectorbt, plotly, jupyter
+
 ## [1.0.0] - 2026-05-22
 
 Maintained by [haidrrrry](https://github.com/haidrrrry). Forked from [HKUDS/AI-Trader](https://github.com/HKUDS/AI-Trader) (MIT).

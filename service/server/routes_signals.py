@@ -274,6 +274,30 @@ def register_signal_routes(app: FastAPI, ctx: RouteContext) -> None:
                 cursor.execute('SELECT cash FROM agents WHERE id = ?', (agent_id,))
                 row = cursor.fetchone()
                 current_cash = row['cash'] if row else 0
+
+                cursor.execute(
+                    """
+                    SELECT symbol, market, token_id, side, quantity, entry_price, current_price
+                    FROM positions
+                    WHERE agent_id = ?
+                    """,
+                    (agent_id,),
+                )
+                open_positions = [dict(item) for item in cursor.fetchall()]
+
+                from risk_manager import check_position_size_limit
+
+                risk_result = check_position_size_limit(
+                    trade_value=trade_value,
+                    cash=float(current_cash or 0),
+                    open_positions=open_positions,
+                    symbol=symbol,
+                    market=market,
+                    token_id=polymarket_token_id,
+                )
+                if not risk_result.allowed:
+                    raise HTTPException(status_code=400, detail=risk_result.reason)
+
                 if current_cash < total_deduction:
                     raise HTTPException(
                         status_code=400,

@@ -12,4 +12,5 @@ psycopg[binary]>=3.2.1
 redis>=5.0.8
 pytest>=8.0.0
 yfinance>=0.2.40
+prometheus-fastapi-instrumentator>=7.0.0
 fastmcp>=2.0.0

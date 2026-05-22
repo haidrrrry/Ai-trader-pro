@@ -4,6 +4,7 @@ Routes Module
 所有 API 路由定义入口。
 """
 
+import os
 import time
 
 from fastapi import FastAPI, HTTPException, Request
@@ -11,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import CORS_ORIGINS
 from rate_limit import check_rate_limit, get_client_ip
+from routes_analytics import register_analytics_routes
 from routes_agent import register_agent_routes
 from routes_challenges import register_challenge_routes
 from routes_experiments import register_experiment_routes
@@ -74,10 +76,20 @@ def create_app() -> FastAPI:
     register_agent_routes(app, ctx)
     register_signal_routes(app, ctx)
     register_trading_routes(app, ctx)
+    register_analytics_routes(app, ctx)
     register_experiment_routes(app, ctx)
     register_research_routes(app, ctx)
     register_challenge_routes(app, ctx)
     register_team_mission_routes(app, ctx)
     register_user_routes(app, ctx)
     register_misc_routes(app)
+
+    if os.getenv("PROMETHEUS_METRICS_ENABLED", "true").strip().lower() not in {"0", "false", "no", "off"}:
+        try:
+            from prometheus_fastapi_instrumentator import Instrumentator
+
+            Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+        except Exception:
+            pass
+
     return app

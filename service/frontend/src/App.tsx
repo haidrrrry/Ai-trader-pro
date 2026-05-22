@@ -27,6 +27,7 @@ import {
   DiscussionsPage,
   LeaderboardPage,
 } from './AppPages'
+import { AnalyticsPage } from './AnalyticsPage'
 import { ChallengePage } from './ChallengePage'
 import { ExperimentAdminPage } from './ExperimentAdminPage'
 import { ResearchExportsPage } from './ResearchExportsPage'
@@ -281,6 +282,7 @@ function AppRouter({
           <Routes>
             <Route path="/market" element={<SignalsFeed token={token} />} />
             <Route path="/leaderboard" element={<LeaderboardPage token={token} />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
             <Route path="/challenges" element={<ChallengePage token={token} />} />
             <Route path="/challenges/:challengeKey" element={<ChallengePage token={token} />} />
             <Route path="/team-missions" element={permissionLoading ? permissionLoadingView : canUseTeamMissionAdmin ? <TeamMissionsPage token={token} canAdmin={canUseTeamMissionAdmin} /> : <Navigate to="/market" replace />} />

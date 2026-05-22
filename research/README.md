@@ -9,6 +9,23 @@ the unified backend export layer in `service/server/research_exports.py` or from
 CSV files that were produced by that layer. SQLite is only a local fixture or
 small-sample fallback.
 
+## Interactive Notebooks
+
+Install notebook dependencies:
+
+```bash
+pip install -r research/requirements.txt
+jupyter notebook research/
+```
+
+| Notebook | Purpose |
+|----------|---------|
+| `Agent_Backtesting_Engine.ipynb` | Walk-forward backtest, vectorbt, metrics, parameter optimization |
+| `Agent_Backtesting_and_Evaluation.ipynb` | Synthetic agent evaluation (Sharpe, Sortino, VaR, ranking) |
+| `Multi_Agent_Collaboration_Experiments.ipynb` | Light copy-trade / collaboration simulation |
+
+Figures save to `research/figures/`.
+
 ## One-Command Workflows
 
 Export the full anonymized research dataset:
