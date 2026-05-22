@@ -1,5 +1,5 @@
 # AI-Trader Server - Private Implementation
-
+ 
 This directory contains the proprietary server implementation for AI-Trader.
 
 ## Contents
