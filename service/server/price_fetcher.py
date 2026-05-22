@@ -8,6 +8,11 @@ Crypto: 从 Hyperliquid 获取价格（停止使用 Alpha Vantage crypto 端点�
 import os
 import random
 import requests
+
+try:
+    import yfinance as yf
+except ImportError:  # pragma: no cover - optional until requirements install
+    yf = None
 from contextlib import contextmanager
 from contextvars import ContextVar
 from datetime import datetime, timezone, timedelta
@@ -21,9 +26,10 @@ try:
 except ImportError:
     _ET_ZONEINFO = None  # Python < 3.9 fallback: use fixed offset below
 
-# Alpha Vantage API configuration
-ALPHA_VANTAGE_API_KEY = os.environ.get("ALPHA_VANTAGE_API_KEY", "demo")
-BASE_URL = "https://www.alphavantage.co/query"
+# Alpha Vantage API configuration (optional override)
+ALPHA_VANTAGE_API_KEY = os.environ.get("ALPHA_VANTAGE_API_KEY", "").strip()
+BASE_URL = os.environ.get("ALPHA_VANTAGE_BASE_URL", "https://www.alphavantage.co/query").strip()
+BINANCE_API_BASE_URL = os.environ.get("BINANCE_API_BASE_URL", "https://api.binance.com").strip().rstrip("/")
 
 # Hyperliquid public info endpoint (no API key required for reads)
 HYPERLIQUID_API_URL = os.environ.get("HYPERLIQUID_API_URL", "https://api.hyperliquid.xyz/info").strip()
@@ -692,18 +698,25 @@ def get_price_from_market(
             market = (market or "").strip().lower()
 
         if market == "crypto":
-            # Crypto pricing now uses Hyperliquid public endpoints.
-            # Try historical candle (when executed_at is provided), then fall back to mid price.
-            price = _get_hyperliquid_candle_close(symbol, executed_at) or _get_hyperliquid_mid_price(symbol)
+            # Prefer Binance public REST (no API key), then Hyperliquid as fallback.
+            price = (
+                _get_binance_price(symbol)
+                or _get_hyperliquid_candle_close(symbol, executed_at)
+                or _get_hyperliquid_mid_price(symbol)
+            )
         elif market == "polymarket":
             # Polymarket pricing uses public Gamma + CLOB endpoints.
             # We use the current orderbook mid price (paper trading).
             price = _get_polymarket_mid_price(symbol, token_id=token_id, outcome=outcome)
         elif market == "us-stock":
-            if not ALPHA_VANTAGE_API_KEY or ALPHA_VANTAGE_API_KEY == "demo":
-                _price_log("Warning: ALPHA_VANTAGE_API_KEY not set, using agent-provided price")
-                return None
-            price = _get_us_stock_price(symbol, executed_at)
+            price = _get_us_stock_price_yfinance(symbol)
+            if price is None and ALPHA_VANTAGE_API_KEY and ALPHA_VANTAGE_API_KEY != "demo":
+                price = _get_us_stock_price(symbol, executed_at)
+            elif price is None:
+                _price_log(
+                    f"[Price API] No US stock price for {symbol}; "
+                    "set ALPHA_VANTAGE_API_KEY for historical intraday fallback"
+                )
         else:
             _price_log(f"[Price API] Unsupported market for server price fetch: {market}")
             return None
@@ -717,6 +730,55 @@ def get_price_from_market(
     except Exception as e:
         _price_log(f"[Price API] Error fetching {symbol} ({market}): {e}")
         return None
+
+
+def _normalize_binance_symbol(symbol: str) -> str:
+    cleaned = (symbol or "").strip().upper().replace("/", "").replace("-", "")
+    if cleaned.endswith("USDT"):
+        return cleaned
+    return f"{cleaned}USDT"
+
+
+def _get_binance_price(symbol: str) -> Optional[float]:
+    """Fetch spot price from Binance public REST API (no API key)."""
+    pair = _normalize_binance_symbol(symbol)
+    try:
+        payload = _request_json_with_retry(
+            "binance",
+            "GET",
+            f"{BINANCE_API_BASE_URL}/api/v3/ticker/price",
+            params={"symbol": pair},
+        )
+        if isinstance(payload, dict) and payload.get("price") is not None:
+            return float(payload["price"])
+    except Exception as exc:
+        _price_log(f"[Price API] Binance price fetch failed for {pair}: {exc}")
+    return None
+
+
+def _get_us_stock_price_yfinance(symbol: str) -> Optional[float]:
+    """Fetch latest US stock price via yfinance (no API key)."""
+    if yf is None:
+        _price_log("[Price API] yfinance is not installed")
+        return None
+    cleaned = (symbol or "").strip().upper()
+    if not cleaned:
+        return None
+    try:
+        ticker = yf.Ticker(cleaned)
+        fast_info = getattr(ticker, "fast_info", None) or {}
+        for key in ("last_price", "lastPrice", "regular_market_price", "regularMarketPrice"):
+            value = fast_info.get(key) if isinstance(fast_info, dict) else getattr(fast_info, key, None)
+            if value is not None:
+                price = float(value)
+                if price > 0:
+                    return price
+        history = ticker.history(period="1d", interval="1m")
+        if history is not None and not history.empty:
+            return float(history["Close"].iloc[-1])
+    except Exception as exc:
+        _price_log(f"[Price API] yfinance price fetch failed for {cleaned}: {exc}")
+    return None
 
 
 def _get_us_stock_price(symbol: str, executed_at: str) -> Optional[float]:
