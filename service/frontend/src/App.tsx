@@ -13,6 +13,7 @@ import {
   NOTIFICATION_POLL_INTERVAL,
   PositionsPage,
   RegisterPage,
+  MobileNavToggle,
   Sidebar,
   SignalsFeed,
   StrategiesPage,
@@ -69,6 +70,7 @@ function App() {
   const [agentInfoLoading, setAgentInfoLoading] = useState(Boolean(localStorage.getItem('claw_token')))
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null)
   const [notificationCounts, setNotificationCounts] = useState<NotificationCounts>({ discussion: 0, strategy: 0, experiment: 0 })
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   const t = getT(language)
 
@@ -265,11 +267,14 @@ function AppRouter({
         onLogout={logout}
         notificationCounts={notificationCounts}
         onMarkCategoryRead={markCategoryRead}
+        mobileOpen={mobileNavOpen}
+        onMobileClose={() => setMobileNavOpen(false)}
       />
 
-      <main className="main-content" style={{ display: 'flex', gap: '24px' }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+      <main className="main-content app-main-layout">
+        <div className="app-main-column">
+          <div className="topbar-row">
+            <MobileNavToggle onClick={() => setMobileNavOpen((open) => !open)} />
             <TopbarControls />
           </div>
 
@@ -296,7 +301,9 @@ function AppRouter({
           </Routes>
         </div>
 
-        <TrendingSidebar />
+        <aside className="trending-sidebar-wrap">
+          <TrendingSidebar />
+        </aside>
       </main>
     </div>
   )

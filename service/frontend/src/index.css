@@ -3001,8 +3001,76 @@ a {
   border-color: rgba(108, 87, 58, 0.12);
 }
 
+.app-main-layout {
+  display: flex;
+  gap: 24px;
+}
+
+.app-main-column {
+  flex: 1;
+  min-width: 0;
+}
+
+.topbar-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.mobile-nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 20px;
+  cursor: pointer;
+  margin-right: auto;
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  border: none;
+  background: rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+
+.table-scroll,
+.leaderboard-table-wrap,
+.positions-table-wrap,
+.signal-feed-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
+  .mobile-nav-toggle {
+    display: inline-flex;
+  }
+
+  .sidebar-overlay {
+    display: block;
+  }
+
+  .app-main-layout {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .topbar-row {
+    justify-content: space-between;
+  }
   .landing-shell,
   .auth-shell {
     padding: 16px;
@@ -3022,15 +3090,40 @@ a {
   }
 
   .sidebar {
-    width: 100%;
-    position: relative;
-    height: auto;
+    width: min(280px, 85vw);
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 100;
+    height: 100vh;
+    transform: translateX(-105%);
+    transition: transform 0.25s ease;
+    box-shadow: var(--shadow-lg);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
   }
 
   .main-content {
     margin-left: 0;
     max-width: 100%;
-    padding: 16px;
+    padding: 12px;
+    width: 100%;
+  }
+
+  .trending-sidebar-wrap {
+    width: 100%;
+  }
+
+  .header-title {
+    font-size: 22px;
+  }
+
+  .card,
+  .signal-card,
+  .leaderboard-card {
+    padding: 14px;
   }
 
   .stats-grid {
@@ -3109,5 +3202,25 @@ a {
 
   .intel-pager {
     flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 375px) {
+  .main-content {
+    padding: 10px;
+  }
+
+  .header-title {
+    font-size: 20px;
+  }
+
+  .nav-link {
+    padding: 10px 12px;
+  }
+
+  .stats-grid,
+  .signal-grid,
+  .leaderboard-grid {
+    grid-template-columns: 1fr;
   }
 }

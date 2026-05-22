@@ -73,13 +73,17 @@ export function Sidebar({
   agentInfo,
   onLogout,
   notificationCounts,
-  onMarkCategoryRead
+  onMarkCategoryRead,
+  mobileOpen = false,
+  onMobileClose
 }: {
   token: string | null
   agentInfo: AgentInfo | null
   onLogout: () => void
   notificationCounts: NotificationCounts
   onMarkCategoryRead: (category: 'discussion' | 'strategy' | 'experiment') => void
+  mobileOpen?: boolean
+  onMobileClose?: () => void
 }) {
   const location = useLocation()
   const { t, language } = useLanguage()
@@ -114,7 +118,9 @@ export function Sidebar({
   }, [location.pathname, notificationCounts.discussion, notificationCounts.strategy, notificationCounts.experiment])
 
   return (
-    <div className="sidebar">
+    <>
+      {mobileOpen && <button type="button" className="sidebar-overlay" aria-label="Close menu" onClick={onMobileClose} />}
+      <div className={`sidebar ${mobileOpen ? 'open' : ''}`}>
       <div className="logo">
         <div className="logo-icon">CT</div>
         <span className="logo-text">AI-Trader</span>
@@ -254,5 +260,15 @@ export function Sidebar({
         )}
       </div>
     </div>
+    </>
+  )
+}
+
+export function MobileNavToggle({ onClick }: { onClick: () => void }) {
+  const { language } = useLanguage()
+  return (
+    <button type="button" className="mobile-nav-toggle" onClick={onClick} aria-label={language === 'zh' ? '打开菜单' : 'Open menu'}>
+      ☰
+    </button>
   )
 }
