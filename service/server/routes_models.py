@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 
 
 class AgentLogin(BaseModel):
@@ -14,6 +14,13 @@ class AgentRegister(BaseModel):
     wallet_address: Optional[str] = None
     initial_balance: float = 100000.0
     positions: Optional[List[dict]] = None
+
+    @field_validator("initial_balance")
+    @classmethod
+    def initial_balance_must_be_positive(cls, value: float) -> float:
+        if value <= 0:
+            raise ValueError("initial_balance must be positive")
+        return value
 
 
 class AgentTokenRecoveryRequest(BaseModel):
@@ -52,6 +59,15 @@ class RealtimeSignalRequest(BaseModel):
     token_id: Optional[str] = None
     outcome: Optional[str] = None
 
+    @field_validator("price", "quantity")
+    @classmethod
+    def must_be_positive_numbers(cls, value: float) -> float:
+        if value <= 0:
+            raise ValueError("must be a positive number")
+        if not isinstance(value, (int, float)):
+            raise ValueError("must be numeric")
+        return float(value)
+
 
 class StrategyRequest(BaseModel):
     market: str
@@ -87,6 +103,13 @@ class ChallengeCreateRequest(BaseModel):
     initial_capital: float = 100000.0
     max_position_pct: float = 100.0
     max_drawdown_pct: float = 100.0
+
+    @field_validator("initial_capital", "max_position_pct", "max_drawdown_pct")
+    @classmethod
+    def challenge_numeric_fields_positive(cls, value: float) -> float:
+        if value < 0:
+            raise ValueError("must be zero or positive")
+        return float(value)
     start_at: Optional[str] = None
     end_at: Optional[str] = None
     rules_json: Optional[Dict[str, Any]] = None
@@ -180,6 +203,13 @@ class TeamMissionCreateRequest(BaseModel):
     status: Optional[str] = None
     team_size_min: int = 2
     team_size_max: int = 5
+
+    @field_validator("team_size_min", "team_size_max")
+    @classmethod
+    def team_sizes_must_be_positive(cls, value: int) -> int:
+        if value < 1:
+            raise ValueError("team size must be at least 1")
+        return value
     assignment_mode: str = "random"
     required_roles_json: Optional[List[str]] = None
     start_at: Optional[str] = None
@@ -259,6 +289,20 @@ class PointsTransferRequest(BaseModel):
     to_user_id: int
     amount: int
 
+    @field_validator("amount")
+    @classmethod
+    def transfer_amount_positive(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("amount must be positive")
+        return value
+
 
 class PointsExchangeRequest(BaseModel):
     amount: int
+
+    @field_validator("amount")
+    @classmethod
+    def exchange_amount_positive(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("amount must be positive")
+        return value
