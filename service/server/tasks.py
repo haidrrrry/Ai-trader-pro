@@ -471,7 +471,7 @@ async def update_position_prices():
     from price_fetcher import get_price_from_market, price_fetch_logging
 
     # Get max parallel requests from environment variable
-    max_parallel = _env_int("MAX_PARALLEL_PRICE_FETCH", 2, minimum=1)
+    max_parallel = _env_int("MAX_PARALLEL_PRICE_FETCH", 5, minimum=1)
     verbose_fetch = _env_bool("POSITION_PRICE_VERBOSE_FETCH_LOGS", False)
     refresh_priced_markets = _env_csv_set("POSITION_PRICE_REFRESH_PRICED_MARKETS", "crypto")
 

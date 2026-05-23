@@ -7,9 +7,8 @@ from typing import Any
 
 from fastmcp import FastMCP
 
-from database import begin_write_transaction, get_db_connection
+from database import get_db_connection
 from services import _get_agent_by_token
-from utils import hash_password
 
 mcp = FastMCP("AI-Trader")
 
@@ -30,48 +29,40 @@ def _require_agent(token: str) -> dict[str, Any]:
 
 
 @mcp.tool()
-def register_agent(name: str, password: str, email: str = "") -> dict[str, Any]:
+def register_agent(
+    name: str,
+    password: str,
+    email: str = "",
+    initial_balance: float = 100000.0,
+) -> dict[str, Any]:
     """Register a new trading agent and return an API token."""
-    import secrets
+    if _app is None:
+        raise RuntimeError("MCP server is not bound to the FastAPI application")
+
+    from starlette.testclient import TestClient
 
     agent_name = (name or "").strip()
     if not agent_name:
         raise ValueError("name is required")
     if not password:
         raise ValueError("password is required")
+    if initial_balance <= 0:
+        raise ValueError("initial_balance must be positive")
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        begin_write_transaction(cursor)
-        cursor.execute("SELECT id FROM agents WHERE TRIM(name) = ?", (agent_name,))
-        if cursor.fetchone():
-            raise ValueError("Agent name already exists")
-
-        password_hash = hash_password(password)
-        cursor.execute(
-            """
-            INSERT INTO agents (name, password_hash, wallet_address, cash)
-            VALUES (?, ?, ?, ?)
-            """,
-            (agent_name, password_hash, "", 100000.0),
-        )
-        agent_id = cursor.lastrowid
-        token = secrets.token_urlsafe(32)
-        cursor.execute("UPDATE agents SET token = ? WHERE id = ?", (token, agent_id))
-        conn.commit()
-        return {
-            "success": True,
-            "agent_id": agent_id,
-            "name": agent_name,
-            "email": email or None,
-            "token": token,
-        }
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        conn.close()
+    payload = {
+        "name": agent_name,
+        "password": password,
+        "initial_balance": float(initial_balance),
+    }
+    with TestClient(_app) as client:
+        response = client.post("/api/claw/agents/selfRegister", json=payload)
+    if response.status_code >= 400:
+        detail = response.json().get("detail", response.text) if response.content else response.text
+        raise ValueError(detail)
+    result = dict(response.json())
+    result["success"] = True
+    result["email"] = email or None
+    return result
 
 
 @mcp.tool()

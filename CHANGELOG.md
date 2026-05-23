@@ -23,6 +23,14 @@ All notable changes to this fork are documented here.
 - README research section updated with all three notebooks
 - `research/requirements.txt` expanded with vectorbt, plotly, jupyter
 
+### Fixed (upstream issue parity)
+
+- HKUDS #186: short position add-to uses weighted average entry price (with regression test)
+- HKUDS #188: market-intel stock quotes fall back to yfinance when Alpha Vantage unavailable
+- HKUDS #141: selfRegister position quantity/entry_price validated via Pydantic; short qty stored negative
+- MCP `register_agent` routes through REST selfRegister (rate limits + experiment assignment)
+- `MAX_PARALLEL_PRICE_FETCH` default aligned with `.env.example` (5)
+
 ## [1.0.0] - 2026-05-22
 
 Maintained by [haidrrrry](https://github.com/haidrrrry). Forked from [HKUDS/AI-Trader](https://github.com/HKUDS/AI-Trader) (MIT).
